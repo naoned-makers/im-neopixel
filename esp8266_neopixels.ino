@@ -9,7 +9,7 @@
 #define mqtt_server "ironman.local"
 #define im_neopixel_topic "im/event/esp8266/neopixel/#" //Topic neopixel
 
-#define STRIPA_PIN 2
+#define STRIPA_PIN 4
 #define STRIPA_LENGTH 16
 #define STRIPB_PIN 3
 #define STRIPB_LENGTH 16
@@ -22,7 +22,7 @@ PubSubClient mqttClient(wifiClient);
 //#######################################################################################
 
 // Pattern types supported:
-enum  pattern { NONE =0, RAINBOW_CYCLE=1, THEATER_CHASE=2, COLOR_WIPE=3, SCANNER=4, FADE=5 };
+enum  pattern { NONE =0, RAINBOW_CYCLE=1, THEATER_CHASE=2, COLOR_WIPE=3, SCANNER=4, FADE=5, FIX=6 };
 // Patern directions supported:
 enum  direction { FORWARD, REVERSE };
  
@@ -193,6 +193,25 @@ class NeoPatterns : public Adafruit_NeoPixel
         show();
         Increment();
     }
+
+    // Initialize for a ColorSet
+    void ColorFix(uint32_t color, uint8_t interval, direction dir = FORWARD)
+    {
+        ActivePattern = FIX;
+        Interval = interval;
+        TotalSteps = numPixels();
+        Color1 = color;
+        Index = 0;
+        Direction = dir;
+    }
+    
+    // Update the Color Set Pattern
+    void ColorFixUpdate()
+    {
+        ColorSet(Color1);
+        show();
+        Increment();
+    }
     
     // Initialize for a SCANNNER
     void Scanner(uint32_t color1, uint8_t interval)
@@ -341,8 +360,8 @@ void setup()
   StripB.begin();
     
   // Kick off a pattern
-  StripA.ColorWipe(StripA.Color(255,255,0), 100);
-  StripB.Scanner(StripB.Color(255,0,0), 55);
+  StripA.RainbowCycle(500);
+  StripB.RainbowCycle(500);
 }
 
 void setup_wifi()
@@ -399,6 +418,7 @@ void callback(char *topic, byte *payload, unsigned int length)
     Serial.print((char)payload[i]);
     inData[i] = (char)payload[i];
   }
+  jsonBuffer.clear();
   JsonObject& root = jsonBuffer.parseObject(inData);  
   // Most of the time, you can rely on the implicit casts.
   // In other case, you can do root["time"].as<long>();
@@ -437,14 +457,48 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   if(pattern == RAINBOW_CYCLE){
     Serial.println(" RAINBOW_CYCLE");
+    strip->ActivePattern = RAINBOW_CYCLE;
+    strip->Direction = FORWARD;
+    strip->Index = 0;
+    strip->TotalSteps = 255;
   }else if(pattern == THEATER_CHASE){
     Serial.println(" THEATER_CHASE");
+    strip->ActivePattern = THEATER_CHASE;
+    strip->Direction = FORWARD;
+    strip->Index = 0;
+    strip->TotalSteps = strip->numPixels();
+    //strip->Color1 = color1;
+    //strip->Color2 = color2;
   }else if(pattern == COLOR_WIPE){
     Serial.println(" COLOR_WIPE");
+    strip->ActivePattern = COLOR_WIPE;
+    strip->Direction = FORWARD;
+    strip->Index = 0;
+    strip->TotalSteps = strip->numPixels();
+    //strip->Color1 = color;
   }else if(pattern == SCANNER){
     Serial.println(" SCANNER");
+    strip->ActivePattern = SCANNER;
+    strip->Direction = FORWARD;
+    strip->Index = 0;
+    strip->TotalSteps = (strip->numPixels() - 1) * 2;
+    //strip->Color1 = color1;
   }else if(pattern == FADE){
-    Serial.println(" FADE");  
+    Serial.println(" FADE");
+    strip->ActivePattern = FADE;
+    strip->Direction = FORWARD;
+    strip->Index = 0;
+    strip->TotalSteps = strip->numPixels();//specifies how many steps it should take to get from color1 to color2.
+    //strip->Color1 = color1;
+    //strip->Color2 = color2;
+  }else if(pattern == FIX){
+    Serial.println(" FIX");
+    strip->ActivePattern = FIX;
+    //strip->Direction = FORWARD;
+    //strip->Index = 0;
+    //strip->TotalSteps = strip->numPixels();//specifies how many steps it should take to get from color1 to color2.
+    //strip->Color1 = color1;
+    //strip->Color2 = color2;
   }else{
     Serial.print(" pattern:");
     Serial.println(pattern);
@@ -478,11 +532,15 @@ void loop()
 // strip A Completion Callback
 void StripAComplete()
 {
-
+  if(StripA.ActivePattern == FADE){
+    StripA.Reverse();
+  }
 }
  
 // Strip B Completion Callback
 void StripBComplete()
 {
-
+  if(StripB.ActivePattern == FADE){
+    StripB.Reverse();
+  }
 }
