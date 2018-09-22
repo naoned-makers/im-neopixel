@@ -74,6 +74,9 @@ class NeoPatterns : public Adafruit_NeoPixel
                 case FADE:
                     FadeUpdate();
                     break;
+                case FIX:
+                    ColorFixUpdate();
+                    break;
                 default:
                     break;
             }
@@ -209,8 +212,6 @@ class NeoPatterns : public Adafruit_NeoPixel
     void ColorFixUpdate()
     {
         ColorSet(Color1);
-        show();
-        Increment();
     }
     
     // Initialize for a SCANNNER
@@ -360,8 +361,10 @@ void setup()
   StripB.begin();
     
   // Kick off a pattern
-  StripA.RainbowCycle(500);
-  StripB.RainbowCycle(500);
+  StripA.ColorFix(StripA.Color(34,34,255),100000);
+  StripB.ColorFix(StripB.Color(34,34,255),100000);
+  StripA.Update();
+  StripB.Update();
 }
 
 void setup_wifi()
