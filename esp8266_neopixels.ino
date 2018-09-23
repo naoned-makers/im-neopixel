@@ -432,6 +432,7 @@ void callback(char *topic, byte *payload, unsigned int length)
   long color1 = root["color1"] | -1L;
   long color2 = root["color2"] | -1L;
   int pattern = root["pattern"] | -1;
+  int totalSteps = root["totalSteps"] | -1;
   Serial.print(" color1:");
   Serial.print(color1);
   Serial.print(" color2:");
@@ -440,6 +441,8 @@ void callback(char *topic, byte *payload, unsigned int length)
   Serial.print(interval);
   Serial.print(" pattern:");
   Serial.print(pattern);
+  Serial.print(" totalSteps:");
+  Serial.print(totalSteps);
   
   NeoPatterns *strip;
   if(pin=='B'){
@@ -457,6 +460,9 @@ void callback(char *topic, byte *payload, unsigned int length)
   }
   if(interval != -1){
     strip->Interval = interval;
+  }
+  if(totalSteps != -1){
+    strip->TotalSteps = totalSteps;
   }
   if(pattern == RAINBOW_CYCLE){
     Serial.println(" RAINBOW_CYCLE");
@@ -491,17 +497,13 @@ void callback(char *topic, byte *payload, unsigned int length)
     strip->ActivePattern = FADE;
     strip->Direction = FORWARD;
     strip->Index = 0;
-    strip->TotalSteps = strip->numPixels();//specifies how many steps it should take to get from color1 to color2.
+    //strip->TotalSteps = strip->numPixels();//specifies how many steps it should take to get from color1 to color2.
     //strip->Color1 = color1;
     //strip->Color2 = color2;
   }else if(pattern == FIX){
     Serial.println(" FIX");
     strip->ActivePattern = FIX;
-    //strip->Direction = FORWARD;
-    //strip->Index = 0;
-    //strip->TotalSteps = strip->numPixels();//specifies how many steps it should take to get from color1 to color2.
     //strip->Color1 = color1;
-    //strip->Color2 = color2;
   }else{
     Serial.print(" pattern:");
     Serial.println(pattern);
